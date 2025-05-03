@@ -1,0 +1,223 @@
+{
+  "name": "gmail-ai-to-sheets.json",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -660,
+        -40
+      ],
+      "id": "c17c973b-1833-45b3-bc5c-c2dfafdf27d2",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "A4jgsBFVIeZtKEiq",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": "REPLACE_ME_DOCUMENT_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "\u0627\u0644\u0648\u0631\u0642\u06291",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Em38mUPMTrNZwt2CmGodmJR96Pi_NSAoCzaA72sPSkE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID ": "$json[\"id\"]",
+            "Snippet": "$json[\"Snippet\"]",
+            "Date": "$json[\"internalDate\"]"
+          },
+          "matchingColumns": [
+            "ID "
+          ],
+          "schema": [
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Snippet",
+              "displayName": "Snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -140,
+        -20
+      ],
+      "id": "e1c5b308-e308-4b2b-b14b-cd06f94e8647",
+      "name": "Google Sheets",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pt6FDWU9KMB9v7o4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "huggingFaceApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"inputs\": \"{{ $json[\\\"snippet\\\"] }}\",\n  \"parameters\": {\n    \"candidate_labels\": [\"important\", \"not important\"]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -440,
+        -40
+      ],
+      "id": "36f06465-151c-49df-9f2b-c97e970307c9",
+      "name": "HTTP Request",
+      "executeOnce": false,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "pxSSbjj7IxKINJtn",
+          "name": "HuggingFace"
+        },
+        "huggingFaceApi": {
+          "id": "NOZL2aLZEq4xDBAE",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5094396a-b89d-4290-a060-64a9496c8adb",
+              "leftValue": "={{ $json.labels[0] }}",
+              "rightValue": "important",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -220,
+        -260
+      ],
+      "id": "e111e3f6-997f-4857-add1-c5965917ba0f",
+      "name": "If1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d63cb704-9f72-43c7-b293-fbf689f7ef48",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "021e8be7a037084aa433b51dceb0573af352592c6ef4c97a447cb6ced19d9230"
+  },
+  "id": "I7AAyFrKOb6bn3l1",
+  "tags": []
+}
